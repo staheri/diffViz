@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Author: Saeed Taheri, University of Utah, staheri@cs.utah.edu, 2018, All rights reserved
 # Code: diffCore.py
-# Description: Takes 2 MRR text files return their diff
+# Description: Implementation of diff algorithm
 
-import sys,subprocess
-import os
 import math
 import decimal
 
@@ -23,8 +21,8 @@ def setSummary(l):
 		for item in l:
 			ito = int(item)
 			if iprev == -1:
-				istart = ito 
-				iend = ito 
+				istart = ito
+				iend = ito
 			else:
 				if iprev == ito - 1:
 					iend = ito
@@ -39,11 +37,11 @@ def setSummary(l):
 					istart = ito
 					iend = ito
 					#set new istart
-			iprev = ito 
+			iprev = ito
 		sistart = `istart`
 		siend = `iend`
 		if istart == iend:
-			tmps = tmps + sistart 
+			tmps = tmps + sistart
 		else:
 			tmps = tmps + sistart + "-" + siend
 	return tmps
@@ -71,7 +69,7 @@ def getEGelement(eg,i,j):
 def printEG(eg):
 	for row in eg:
 		print row
-		
+
 # Find middle snake of A and B. n=len(a), m=len(b)
 def midSnake(a,n,b,m,eg):
 	ret = {}
@@ -82,14 +80,14 @@ def midSnake(a,n,b,m,eg):
 	vf[1] = 0
 	delta = n - m
 	vr[n-m-1] = n
-	
+
 	for d in range(0,int(math.ceil((m+n)*1.0/2))+1):
 		vfd[d] = {}
 		vrd[d] = {}
 		for k in range(-d,d+1,2):
-			if k == -d or k != d and vf[k-1] < vf[k+1]: 
+			if k == -d or k != d and vf[k-1] < vf[k+1]:
 				x = vf[k+1]
-			else: 
+			else:
 				x = vf[k-1]+1
 			y = x - k
 			xp = x
@@ -127,8 +125,8 @@ def midSnake(a,n,b,m,eg):
 				if overlaps(x,y,vfd[d][kd][0],vfd[d][kd][1],"r"):
 					ret = [2*d,x,x-kd,xp,xp-kd]
 					return ret
-					
-					
+
+
 	print "NO LS"
 	return [-1,-1,-1,-1,-1]
 	#return ret
@@ -136,7 +134,7 @@ def midSnake(a,n,b,m,eg):
 # Check if two middle snakes overlaps (t = f(orward) ? r(reverse))
 def overlaps(x,y,u,v,t):
 	if t == "f":
-		return x-y == u-v and x >= u 
+		return x-y == u-v and x >= u
 	else:
 		return x-y == u-v and x <= u
 
@@ -180,8 +178,8 @@ def func2(a,b):
 		s = s + "B: %s\n"%(b[dif:dif+1])
 		s = s + "C: %s\n"%(a[dif:])
 	return s
-	
-	
+
+
 	if len(dif) == 1:
 		for i in range(0,len(b)):
 			if b[i] == dif[0]:
@@ -201,7 +199,6 @@ def func2(a,b):
 	return s
 
 # Recursive function to find least common edit script of A and B
-
 def lcs(a,b):
 	n = len(a)
 	m = len(b)
@@ -247,5 +244,3 @@ def lcs(a,b):
 	else:
 		#print "DEL %s\n"%(a)
 		return "A: %s\n"%(a)
-		#print b
-

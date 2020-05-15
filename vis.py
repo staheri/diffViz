@@ -1,5 +1,11 @@
+#!/usr/bin/env python
+# Author: Saeed Taheri, University of Utah, staheri@cs.utah.edu, 2018, All rights reserved
+# Code: vis.py
+# Description: visualization engine for generating diffGraph
 
-class diffMrrGraph:
+
+# diffGraph
+class diffGraph:
 	def __init__(self,name):
 		self.name = name
 		self.nodes = {}
@@ -8,7 +14,7 @@ class diffMrrGraph:
 		self.edges = []
 		self.eseq = []
 		self.invisNodes = {}
-	def addNodes(self,eseq,showC):
+	def addNodes(self,eseq,showC,BW):
 		self.eseq = eseq
 		if len(eseq) <= 0:
 			print "ERROR"
@@ -18,7 +24,7 @@ class diffMrrGraph:
 				# Add C
 				if len(eseq[i].c) != 0:
 					nodeContent = "[label = \"{"
-					if showC == 1:
+					if showC:
 						seq = specialCharFilter(eseq[i].c)
 						for item in seq:
 							nodeContent = nodeContent + item+"\\l"
@@ -39,7 +45,10 @@ class diffMrrGraph:
 					seq = specialCharFilter(eseq[i].a)
 					for item in seq:
 						nodeContent = nodeContent + item+"\\l"
-					nodeContent = nodeContent + "}\" , group=g1, color=blue, style = bold]"
+					if BW:
+						nodeContent = nodeContent + "}\" , group=g1, color=blue, style = bold]"
+					else:
+						nodeContent = nodeContent + "}\" , group=g1, color=blue]"
 					self.nodes["a"+`i`] = nodeContent
 
 				# Add B
@@ -50,7 +59,10 @@ class diffMrrGraph:
 					seq = specialCharFilter(eseq[i].b)
 					for item in seq:
 						nodeContent = nodeContent + item+"\\l"
-					nodeContent = nodeContent + "}\" , group=g2, color=red, style = dashed]"
+					if BW:
+						nodeContent = nodeContent + "}\" , group=g2, color=red, style = dashed]"
+					else:
+						nodeContent = nodeContent + "}\" , group=g2, color=red]"
 					self.nodes["b"+`i`] = nodeContent
 	def addEdges(self):
 		alist = []
@@ -125,7 +137,27 @@ class diffMrrGraph:
 			flg[2] = 1
 		if flg == [0,1,0] or flg == [0,0,1] or flg == [0,0,0]:
 			self.edges.append("c"+`len(self.eseq)-1` + " -> f")
-	def toDot(self):
+	def toDot(self,l,bw):
+		s = "{\n\tnode[shape=record]\n\n\t"
+		if l:
+			s = s + genLegend(bw) + "\n\n\t"
+		for node,cont in sorted(self.nodes.items(),key=lambda k: k[1:]):
+			print node
+			if (node[0] == "a" and "b"+node[1:] in self.nodes.keys()) or (node[0] == "b" and "a"+node[1:] in self.nodes.keys()):
+				s = s + "{rank = same ; a"+node[1:]+self.nodes["a"+node[1:]]+" ; b" + node[1:]+self.nodes["b"+node[1:]]+"}\n\t"
+			else:
+				s = s + node + " " + cont + "\n\t"
+		for node,cont in sorted(self.invisNodes.items(),key=lambda k: k[1:]):
+			print node
+			s = s + node + " " + cont + "\n\t"
+
+		s = s + "\n\t"
+		for edge in self.edges:
+			s = s + edge + "\n\t"
+		s = s + "\n}"
+		print s
+		return s
+	def toBWDot(self):
 		s = "{\n\tnode[shape=record]\n\n\t"
 		#s = s + genLegend() + "\n\n\t"
 		for node,cont in sorted(self.nodes.items(),key=lambda k: k[1:]):
@@ -145,9 +177,7 @@ class diffMrrGraph:
 		print s
 		return s
 
-
-
-
+# Hold edit sequence information
 class editSeq:
 	def __init__(self,a,b,c):
 		self.a = a
@@ -159,16 +189,20 @@ class editSeq:
 		s = s + "\tB: %s\n"%self.b
 		return s
 
-def genLegend():
+def genLegend(bw):
 	s = "subgraph cluster_legend{\n\t\trankdir= TP\n\t\t"
 	s = s+"	label = \"Legend\" ;\n\t\t"
 	s = s+"shape=rectangle  ;\n\t\t"
 	s = s+"color = black  ;\n\t\t"
-	s = s + "\"Block of Native Thread\" [shape=record , color=blue] ; \n\t\t"
-	s = s + "\"Block of Buggy Thread\" [shape=record , color=red] ; \n\t\t"
+	if bw:
+		s = s + "\"Block of A\" [shape=record , color=blue, style=bold] ; \n\t\t"
+		s = s + "\"Block of B\" [shape=record , color=red, style=dashed] ; \n\t\t"
+	else:
+		s = s + "\"Block of A\" [shape=record , color=blue] ; \n\t\t"
+		s = s + "\"Block of B\" [shape=record , color=red] ; \n\t\t"
 	s = s + "\"Common Block in both\" [shape=record , color=green4] ; \n\t\t"
-	s = s + "\"Common Block in both\" -> \"Block of Native Thread\" [style = invis]; \n\t\t"
-	s = s + "\"Block of Native Thread\" -> \"Block of Buggy Thread\"[style = invis]; \n\t\t"
+	s = s + "\"Common Block in both\" -> \"Block of A\" [style = invis]; \n\t\t"
+	s = s + "\"Block of A\" -> \"Block of B\"[style = invis]; \n\t\t"
 	s = s+"}"
 	return s
 def processBuf(buf):
@@ -188,7 +222,6 @@ def processBuf(buf):
 	ret["A"]=deletes
 	ret["B"]=inserts
 	return ret
-
 def mergeCs(li):
 	i = 0
 	line = []
@@ -227,7 +260,6 @@ def mergeCs(li):
 		if len(item.rpartition("[")[2].rpartition("]")[0]) != 0:
 			ret.append(item)
 	return ret
-
 def edit2eseq(li):
 	line = mergeCs(li)
 	i = 0
@@ -288,16 +320,13 @@ def edit2eseq(li):
 	#print obj.toString()
 	eseqObjs.append(obj)
 	return eseqObjs
-
-def edit2dot(lcs,name,showC):
+def edit2dot(lcs,name,showC,BW,l):
 	li = [x.strip() for x in lcs.split("\n") if len(x) != 0]
 	es = edit2eseq(li)
-	dmg = diffMrrGraph(name)
-	dmg.addNodes(es,showC)
+	dmg = diffGraph(name)
+	dmg.addNodes(es,showC,BW)
 	dmg.addEdges()
-	return dmg.toDot()
-
-
+	return dmg.toDot(l,BW)
 def specialCharFilter(seq):
 	special = ["}","{",">","<"]
 	retSeq = []
