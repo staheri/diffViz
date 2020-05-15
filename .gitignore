@@ -1,3 +1,4 @@
 *.pyc
 *.pdf
 *.dot
+.DS_Store
