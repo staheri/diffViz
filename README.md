@@ -16,7 +16,7 @@ positional arguments:
   O           generate the final output <out>.pdf
 
 optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help  show this help message and exit the program
   --hideC     Hides content of common nodes
   --bw        Enables black/white printer compatible graphs
   --legend    Include legend
